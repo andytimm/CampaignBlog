@@ -1,6 +1,7 @@
 library(ggplot2)
 library(stringr)
 library(data.table)
+library(lubridate)
 library(reshape2)
 library(dbplyr)
 library(dplyr)
@@ -15,10 +16,10 @@ voters <-
                    fread(paste(folder, x, sep=''))))
 
 # Drop uneeded columns, and add in correct names
-# The full list is here: http://flvoters.com/download/20180228/2018%20voter-extract-file-layout.pdf
+# The full list of fields is here: http://flvoters.com/download/20180228/2018%20voter-extract-file-layout.pdf
 voters <- voters %>%
   select(V1, V2, V3, V4, V5, V6, V7,V12,V20,V21,V22,V24) %>% 
-  rename(county_code = V1,voter_id = V2, surname = V3, name_suffix = V4,
+  rename(county_code = V1,voter_id = V2, surname = V3, suffix_name = V4,
          first_name = V5, middle_name = V6, records_exemption = V7, zip = V12,
          gender = V20, race= V21, birth_date = V22, party = V24) %>%
 
@@ -26,13 +27,35 @@ voters <- voters %>%
 filter(records_exemption == "N") %>%
   select( -(records_exemption))
   
+# Turn the birth_date field into ages. The function for finding an age is faster than using lubridate,
+# and is from: https://stackoverflow.com/questions/3611314/calculate-ages-in-r
+
+age <- function(from, to) {
+  from_lt = as.POSIXlt(from)
+  to_lt = as.POSIXlt(to)
+  
+  age = to_lt$year - from_lt$year
+  
+  ifelse(to_lt$mon < from_lt$mon |
+           (to_lt$mon == from_lt$mon & to_lt$mday < from_lt$mday),
+         age - 1, age)
+}
+
+voters <- mutate(voters,age = age(mdy(birth_date), today())) %>% 
+  select( -(birth_date))
+
+# Add concatenated name fields, which will be used later by NLP methods.
+# last_first is for the ethnicolr LSTM, whereas f(irst)_m(middle)_l(ast)_s(uffix) is used by my CNN models.
+  
+voters<- mutate(voters,last_first = paste(surname, first_name, sep = " "),
+       f_m_l_s = paste(first_name, middle_name, surname, suffix_name, sep = " "))
+  
+  
+
 # Use zip code to find census tract- this is a relatively course approximation, but is sufficient
 # for the use here.
 voters$zip <-  strtrim(voters$zip, 5)
 
-zip_to_tract <- fread("C:/Users/Andy/Documents/Datasets/Florida Voters/zip_to_tracts.csv",
-                      colClasses = c(tract = "character"))
-
-
-
+# zip_to_tract <- fread("C:/Users/Andy/Documents/Datasets/Florida Voters/zip_to_tracts.csv",
+#                      colClasses = c(tract = "character"))
 
