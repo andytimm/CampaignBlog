@@ -50,10 +50,13 @@ my_voters<- mutate(my_voters,last_first = paste(surname, first_name, sep = " "),
 
 # Use zip code to find census tract- this is a relatively coarse approximation, but is sufficient
 # for the use here. Better geolocation would improve accuracy, but I don't have a fully geocded FL Voter File.
+# Zip codes used are 5 digit, and tracts are the last 6 characters of the FIPS codes in zip_to_tract.
 my_voters$zip <-  strtrim(my_voters$zip, 5)
 
 zip_to_tract <- fread("C:/Users/Andy/Documents/Datasets/Florida Voters/zip_to_tracts.csv",
                       colClasses = c(tract = "character"))
+
+zip_to_tract$tract <- str_sub(zip_to_tract$tract,-6)
 
 #zip_to_tract$zip <- as.character(zip_to_tract$zip)
 
