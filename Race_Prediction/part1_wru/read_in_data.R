@@ -20,6 +20,9 @@ age <- function(from, to) {
 folder <- "~/Datasets/Florida Voters/20180313_VoterDetail/"
 file_list <- list.files(path=folder, pattern="*.txt")
 
+zip_to_tract <- fread("C:/Users/Andy/Documents/Datasets/Florida Voters/zip_to_tracts.csv",
+                      colClasses = c(tract = "character"))
+
 my_voters <- 
   do.call("rbind", 
           lapply(file_list, 
@@ -32,22 +35,28 @@ my_voters <- my_voters %>%
   select(V1, V2, V3, V4, V5, V6, V7,V12,V20,V21,V22,V24) %>% 
   rename(county_code = V1,voter_id = V2, surname = V3, suffix_name = V4,
          first_name = V5, middle_name = V6, records_exemption = V7, zip = V12,
-         gender = V20, race= V21, birth_date = V22, party = V24) %>%
+         sex = V20, race= V21, birth_date = V22, party = V24) %>%
 
 # Remove voters who requested a public records exemption, as we don't get any info about them
 filter(records_exemption == "N") %>%
   select( -(records_exemption)) %>%
   
-# Change "gender" and "party" variables into format used by Imai/Khanna's wru: 0/1: male/female, and
-# 0/1/2: Independent/Democrat/Republican
+# Change "gender" and "party" variables into format used by Imai/Khanna's wru: 0/1/2: male/female/unknown, and
+# 0/1/2: Independent/Democrat/Republican. Note that we have to drop the unknown and blanks.
 mutate(party = fct_lump(party, n = 2)) %>% 
   mutate(party = fct_recode(party,
                             "0" = "Other",
                             "1" = "DEM",
                             "2" = "REP")) %>% 
-mutate(gender = fct_recode(gender,
+mutate(sex = fct_recode(sex,
                            "0" = "M",
-                           "1" = "F")) %>% 
+                           "1" = "F",
+                           "2" = "U")) %>%
+  
+  filter(sex %in% c("0","1")) %>% 
+  mutate(sex = as.numeric(as.character(sex))) %>% 
+  mutate(party = as.numeric(as.character(party))) %>% 
+
   
   
 # Turn the birth_date field into ages. 
@@ -58,7 +67,7 @@ mutate(age = age(mdy(birth_date), today())) %>%
 # last_first is for the ethnicolr LSTM, whereas f(irst)_m(middle)_l(ast)_s(uffix) is used by my models.
   
 mutate(last_first = paste(surname, first_name, sep = " "),
-       f_m_l_s = paste(first_name, middle_name, surname, suffix_name, sep = " "))
+       f_m_l_s = paste(first_name, middle_name, surname, suffix_name, sep = " ")) %>% 
   
   
 
@@ -66,13 +75,9 @@ mutate(last_first = paste(surname, first_name, sep = " "),
 # for the use here. Better geolocation would improve accuracy, but I don't have a fully geocded FL Voter File.
 # Zip codes used are 5 digit, and tracts are the last 6 characters of the FIPS codes in zip_to_tract.
 # Files used and further documentation: https://www.huduser.gov/portal/datasets/usps_crosswalk.html#codebook
-my_voters$zip <-  strtrim(my_voters$zip, 5)
+mutate(zip = strtrim(zip, 5)) %>% 
 
-zip_to_tract <- fread("C:/Users/Andy/Documents/Datasets/Florida Voters/zip_to_tracts.csv",
-                      colClasses = c(tract = "character"))
-
-my_voters <- mutate(my_voters, tract =
-                      zip_to_tract$tract[match(my_voters$zip, zip_to_tract$zip)]) %>% 
+mutate(tract = zip_to_tract$tract[match(zip, zip_to_tract$zip)]) %>% 
   select(-(zip)) %>% 
 
 # Split full FIPS code into state, county, and tract, then remove unsuccesful imputes

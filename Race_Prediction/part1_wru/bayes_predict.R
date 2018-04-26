@@ -22,7 +22,7 @@ my_voters <- predict_race(voter.file = my_voters, census.geo = "tract",
 census_data_all <- get_census_data(key = CENSUS_API_KEY, state = "FL", census.geo = "tract",age = TRUE,
                                sex = TRUE)
 
-my_voters <- predict_race(voter.file = my_voters, census.geo = "tract", party = "party", sex = "gender",
-                          age = "age", census.key = CENSUS_API_KEY, census.data = census_data_all) %>% 
+my_voters <- predict_race(voter.file = my_voters, census.geo = "tract", party = "party", sex = TRUE,
+                          age = TRUE, census.key = CENSUS_API_KEY, census.data = census_data_all) %>% 
   rename(kitchen_pred.whi = pred.whi, kitchen_pred.bla = pred.bla, kitchen_pred.his = pred.his,
          kitchen_pred.asi = pred.asi, kitchen_pred.oth = pred.oth)
