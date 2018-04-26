@@ -1,6 +1,21 @@
 library(tidyverse)
 library(data.table)
+library(forcats)
 library(lubridate)
+
+# This function for finding an age is faster than using lubridate,
+# and is from: https://stackoverflow.com/questions/3611314/calculate-ages-in-r
+
+age <- function(from, to) {
+  from_lt = as.POSIXlt(from)
+  to_lt = as.POSIXlt(to)
+  
+  age = to_lt$year - from_lt$year
+  
+  ifelse(to_lt$mon < from_lt$mon |
+           (to_lt$mon == from_lt$mon & to_lt$mday < from_lt$mday),
+         age - 1, age)
+}
 
 folder <- "~/Datasets/Florida Voters/20180313_VoterDetail/"
 file_list <- list.files(path=folder, pattern="*.txt")
@@ -21,29 +36,28 @@ my_voters <- my_voters %>%
 
 # Remove voters who requested a public records exemption, as we don't get any info about them
 filter(records_exemption == "N") %>%
-  select( -(records_exemption))
+  select( -(records_exemption)) %>%
   
-# Turn the birth_date field into ages. The function for finding an age is faster than using lubridate,
-# and is from: https://stackoverflow.com/questions/3611314/calculate-ages-in-r
-
-age <- function(from, to) {
-  from_lt = as.POSIXlt(from)
-  to_lt = as.POSIXlt(to)
+# Change "gender" and "party" variables into format used by Imai/Khanna's wru: 0/1: male/female, and
+# 0/1/2: Independent/Democrat/Republican
+mutate(party = fct_lump(party, n = 2)) %>% 
+  mutate(party = fct_recode(party,
+                            "0" = "Other",
+                            "1" = "DEM",
+                            "2" = "REP")) %>% 
+mutate(gender = fct_recode(gender,
+                           "0" = "M",
+                           "1" = "F")) %>% 
   
-  age = to_lt$year - from_lt$year
   
-  ifelse(to_lt$mon < from_lt$mon |
-           (to_lt$mon == from_lt$mon & to_lt$mday < from_lt$mday),
-         age - 1, age)
-}
-
-my_voters <- mutate(my_voters,age = age(mdy(birth_date), today())) %>% 
-  select( -(birth_date))
+# Turn the birth_date field into ages. 
+mutate(age = age(mdy(birth_date), today())) %>% 
+  select( -(birth_date)) %>% 
 
 # Add concatenated name fields, which will be used later by NLP methods.
 # last_first is for the ethnicolr LSTM, whereas f(irst)_m(middle)_l(ast)_s(uffix) is used by my models.
   
-my_voters<- mutate(my_voters,last_first = paste(surname, first_name, sep = " "),
+mutate(last_first = paste(surname, first_name, sep = " "),
        f_m_l_s = paste(first_name, middle_name, surname, suffix_name, sep = " "))
   
   
@@ -63,6 +77,7 @@ my_voters <- mutate(my_voters, tract =
 
 # Split full FIPS code into state, county, and tract, then remove unsuccesful imputes
 separate(tract, into = c("state", "county", "tract"), sep = c(2,5)) %>%
+  mutate(state = "FL") %>% 
   drop_na(state,county,tract)
 
 # Tidy up after import
