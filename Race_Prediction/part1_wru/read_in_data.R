@@ -57,11 +57,13 @@ my_voters$zip <-  strtrim(my_voters$zip, 5)
 zip_to_tract <- fread("C:/Users/Andy/Documents/Datasets/Florida Voters/zip_to_tracts.csv",
                       colClasses = c(tract = "character"))
 
-zip_to_tract$tract <- str_sub(zip_to_tract$tract,-6)
-
 my_voters <- mutate(my_voters, tract =
                       zip_to_tract$tract[match(my_voters$zip, zip_to_tract$zip)]) %>% 
-  select(-(zip))
+  select(-(zip)) %>% 
+
+# Split full FIPS code into state, county, and tract, then remove unsuccesful imputes
+separate(tract, into = c("state", "county", "tract"), sep = c(2,5)) %>%
+  drop_na(state,county,tract)
 
 # Tidy up after import
 rm(age,zip_to_tract,file_list,folder)
