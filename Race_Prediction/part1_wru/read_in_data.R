@@ -56,6 +56,20 @@ mutate(sex = fct_recode(sex,
   filter(sex %in% c("0","1")) %>% 
   mutate(sex = as.numeric(as.character(sex))) %>% 
   mutate(party = as.numeric(as.character(party))) %>% 
+  
+# Bin races into white, black, asian, hispanic, other. Again, this is a limitation of Imai/Khanna's framework.
+mutate(race = as.character(race)) %>% 
+  
+  mutate(race = fct_recode(race,
+  "other" = "1",
+  "asian" = "2",
+  "black" = "3",
+  "hispanic" = "4",
+  "white" = "5",
+  "other" = "6",
+  "other" = "7",
+  "other" = "9"
+)) %>% 
 
   
   
