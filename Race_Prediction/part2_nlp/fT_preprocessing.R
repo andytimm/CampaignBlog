@@ -1,7 +1,7 @@
 library(tidyverse)
 
 # formats text for fastText's cmd line tools, ex: __label__white__ Andrew Garland Luboja Timm
-# saves results into a textFile at path
+# saves results into a text file at path
 fT_format <-  function(text,labels,path) {
   write.table(paste(paste("__label__", labels, sep = ""),text),path,
               row.names = FALSE, col.names = FALSE, quote = FALSE)

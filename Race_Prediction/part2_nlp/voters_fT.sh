@@ -13,11 +13,6 @@ tail -n 1331233 voters.preprocessed.txt > voters.pp.valid
 
 ./fasttext supervised -input voters.pp.train -output model_pp_voters
 
-./fasttext test model_pp_voters.bin voters.pp.valid
 
-# With more epochs
-./fasttext supervised -input voters.pp.train -output model_pp_voters -epoch 25
 
-./fasttext test model_pp_voters.bin voters.pp.valid
-
-./fasttext supervised -input voters.pp.train -output model_pp_voters -lr 1.0 -epoch 25 -wordNgrams 2 -bucket 200000 -dim 50 -loss hs
+./fasttext predict-prob model_pp_voters.bin voters.pp.valid 5 > fT_baseline_preds.txt
