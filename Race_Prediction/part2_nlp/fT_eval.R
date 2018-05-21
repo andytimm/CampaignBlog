@@ -56,8 +56,29 @@ transmute(pred_white = str_remove_all(pred_white,"[NA_]"),
 # Now, bind the two dataframes together, and start plotting
 fT_results <- bind_cols(true_labels,fT_baseline)
 
+#White Plot
+white_fT_plot <- ggplot(fT_results, aes(d = race.white, m = pred_white)) + geom_roc(labels = FALSE) +
+  ggtitle("White") + theme(plot.title = element_text(hjust = 0.5))
+calc_auc(white_fT_plot)$AUC
 
+#Black Plot
+black_fT_plot <- ggplot(fT_results, aes(d = race.black, m = pred_black)) + geom_roc(labels = FALSE) +
+  ggtitle("Black") + theme(plot.title = element_text(hjust = 0.5))
+calc_auc(black_fT_plot)$AUC
 
+#Hispanic Plot
+hispanic_fT_plot <- ggplot(fT_results, aes(d = race.hispanic, m = pred_hispanic)) + geom_roc(labels = FALSE) +
+  ggtitle("Hispanic") + theme(plot.title = element_text(hjust = 0.5))
+calc_auc(hispanic_fT_plot)$AUC
 
+#Asian Plot
+asian_fT_plot <- ggplot(fT_results, aes(d = race.asian, m = pred_asian)) + geom_roc(labels = FALSE) +
+  ggtitle("Asian") + theme(plot.title = element_text(hjust = 0.5))
+calc_auc(asian_fT_plot)$AUC
+
+#Other Plot
+other_fT_plot <- ggplot(fT_results, aes(d = race.other, m = pred_other)) + geom_roc(labels = FALSE) +
+  ggtitle("Other") + theme(plot.title = element_text(hjust = 0.5))
+calc_auc(other_fT_plot)$AUC
 
 
