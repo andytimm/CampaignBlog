@@ -1,4 +1,5 @@
 library(tidyverse)
+library(plotROC)
 
 true_labels <- read_delim("C:\\Users\\Andy\\Documents\\Datasets\\Florida Voters\\voters.pp.valid",delim =  " ",
                 col_names = FALSE)
@@ -32,17 +33,30 @@ fT_baseline <- read_delim("C:\\Users\\Andy\\Documents\\Datasets\\Florida Voters\
   spread(key = X7, value = X8, sep = "d") %>%
   spread(key = X9, value = X10, sep = "e") %>% 
   
-  unite("fT_pred_white", c("X1a__label__white","X3b__label__white","X5c__label__white",
+  unite("pred_white", c("X1a__label__white","X3b__label__white","X5c__label__white",
                              "X7d__label__white","X9e__label__white")) %>% 
-  unite("fT_pred_black", c("X1a__label__black","X3b__label__black","X5c__label__black",
+  unite("pred_black", c("X1a__label__black","X3b__label__black","X5c__label__black",
                            "X7d__label__black","X9e__label__black")) %>% 
-  unite("fT_pred_hispanic", c("X1a__label__hispanic","X3b__label__hispanic","X5c__label__hispanic",
+  unite("pred_hispanic", c("X1a__label__hispanic","X3b__label__hispanic","X5c__label__hispanic",
                            "X7d__label__hispanic","X9e__label__hispanic")) %>% 
-  unite("fT_pred_asian", c("X1a__label__asian","X3b__label__asian","X5c__label__asian",
+  unite("pred_asian", c("X1a__label__asian","X3b__label__asian","X5c__label__asian",
                            "X7d__label__asian","X9e__label__asian")) %>% 
-  unite("fT_pred_other", c("X1a__label__other","X3b__label__other","X5c__label__other",
+  unite("pred_other", c("X1a__label__other","X3b__label__other","X5c__label__other",
                            "X7d__label__other","X9e__label__other")) %>%
-  select(-i)
+  select(-i) %>% 
+
+transmute(pred_white = str_remove_all(pred_white,"[NA_]"),
+           pred_black = str_remove_all(pred_black,"[NA_]"),
+           pred_hispanic = str_remove_all(pred_hispanic,"[NA_]"),
+           pred_asian = str_remove_all(pred_asian,"[NA_]"),
+           pred_other = str_remove_all(pred_other,"[NA_]")) %>% 
+  
+  mutate_all(as.numeric)
+
+# Now, bind the two dataframes together, and start plotting
+fT_results <- bind_cols(true_labels,fT_baseline)
+
+
 
 
 
